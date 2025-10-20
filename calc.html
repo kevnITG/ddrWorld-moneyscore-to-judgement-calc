@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDR Score Breakdown Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+```
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .container {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 800px;
+        width: 100%;
+        padding: 40px;
+    }
+    
+    h1 {
+        color: #667eea;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+    
+    .subtitle {
+        text-align: center;
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 14px;
+    }
+    
+    .input-group {
+        margin-bottom: 20px;
+    }
+    
+    label {
+        display: block;
+        margin-bottom: 8px;
+        color: #333;
+        font-weight: 600;
+    }
+    
+    input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+    }
+    
+    input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    button {
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 18px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        margin-top: 10px;
+    }
+    
+    button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    button:active {
+        transform: translateY(0);
+    }
+    
+    #results {
+        margin-top: 30px;
+    }
+    
+    .info-box {
+        background: #f5f5f5;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border-left: 4px solid #667eea;
+    }
+    
+    .info-box strong {
+        color: #667eea;
+    }
+    
+    .solution {
+        background: #f9f9f9;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 15px;
+    }
+    
+    .solution h3 {
+        color: #667eea;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .solution-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+    }
+    
+    .stat {
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        text-align: center;
+    }
+    
+    .stat-label {
+        font-size: 12px;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+        margin-top: 5px;
+    }
+    
+    .marvelous { color: #FFD700; }
+    .perfect { color: #FFA500; }
+    .great { color: #32CD32; }
+    .good { color: #1E90FF; }
+    .ok { color: #9370DB; }
+    .miss { color: #DC143C; }
+    
+    .no-results {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+    }
+    
+    .error {
+        background: #ffebee;
+        color: #c62828;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 20px;
+        border-left: 4px solid #c62828;
+    }
+</style>
+```
+
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 DDR Score Breakdown Calculator</h1>
+        <p class="subtitle">Find all possible judgment combinations for your score</p>
+
+```
+    <form id="calculatorForm">
+        <div class="input-group">
+            <label for="score">Score (displayed, rounded to nearest 10)</label>
+            <input type="number" id="score" min="0" max="1000000" step="10" required placeholder="e.g., 999030">
+        </div>
+        
+        <div class="input-group">
+            <label for="steps">Step Count (arrows/notes)</label>
+            <input type="number" id="steps" min="1" required placeholder="e.g., 613">
+        </div>
+        
+        <div class="input-group">
+            <label for="holds">Hold/Freeze/Shock Count (max O.K.)</label>
+            <input type="number" id="holds" min="0" required placeholder="e.g., 21">
+        </div>
+        
+        <div class="input-group">
+            <label for="maxPerfects">Maximum Perfect Count (optional, default 125)</label>
+            <input type="number" id="maxPerfects" min="0" placeholder="125">
+        </div>
+        
+        <button type="submit">Calculate Breakdowns</button>
+    </form>
+    
+    <div id="results"></div>
+</div>
+
+<script>
+    function findDDRBreakdowns(stepCount, holdCount, displayedScore, maxPerfects = 125) {
+        const totalNotes = stepCount + holdCount;
+        const SC = Math.floor(1000000 / totalNotes);
+        
+        const marvelousPoints = SC;
+        const okPoints = SC;
+        const perfectPoints = SC - 10;
+        const greatPoints = Math.floor(SC * 3 / 5) - 10;
+        const goodPoints = Math.floor(SC * 1 / 5) - 10;
+        
+        const perfectLoss = marvelousPoints - perfectPoints;
+        const greatLoss = marvelousPoints - greatPoints;
+        const goodLoss = marvelousPoints - goodPoints;
+        const missLoss = marvelousPoints;
+        
+        const minActualScore = displayedScore - 5;
+        const maxActualScore = displayedScore + 4;
+        const minLoss = 1000000 - maxActualScore;
+        const maxLoss = 1000000 - minActualScore;
+        
+        const solutions = [];
+        
+        for (let missedHolds = 0; missedHolds <= holdCount; missedHolds++) {
+            const oks = holdCount - missedHolds;
+            const lossFromHolds = missedHolds * missLoss;
+            
+            if (lossFromHolds > maxLoss) continue;
+            
+            for (let missedSteps = 0; missedSteps <= stepCount; missedSteps++) {
+                const lossFromMissedSteps = missedSteps * missLoss;
+                const totalMissLoss = lossFromHolds + lossFromMissedSteps;
+                
+                if (totalMissLoss > maxLoss) continue;
+                
+                const remainingSteps = stepCount - missedSteps;
+                
+                for (let goods = 0; goods <= remainingSteps; goods++) {
+                    const lossFromGoods = goods * goodLoss;
+                    if (totalMissLoss + lossFromGoods > maxLoss) continue;
+                    
+                    for (let greats = 0; greats <= remainingSteps - goods; greats++) {
+                        const lossFromGreats = greats * greatLoss;
+                        const lossWithoutPerfects = totalMissLoss + lossFromGoods + lossFromGreats;
+                        
+                        if (lossWithoutPerfects > maxLoss) continue;
+                        
+                        const minPerfectsNeeded = Math.max(0, Math.ceil((minLoss - lossWithoutPerfects) / perfectLoss));
+                        const maxPerfectsPossible = Math.min(
+                            maxPerfects,
+                            remainingSteps - goods - greats,
+                            Math.floor((maxLoss - lossWithoutPerfects) / perfectLoss)
+                        );
+                        
+                        for (let perfects = minPerfectsNeeded; perfects <= maxPerfectsPossible; perfects++) {
+                            const totalLoss = lossWithoutPerfects + perfects * perfectLoss;
+                            
+                            if (totalLoss >= minLoss && totalLoss <= maxLoss) {
+                                const marvelous = remainingSteps - goods - greats - perfects;
+                                const actualScore = 1000000 - totalLoss;
+                                const roundedScore = Math.round(actualScore / 10) * 10;
+                                
+                                if (roundedScore === displayedScore && marvelous >= 0) {
+                                    solutions.push({
+                                        marvelous: marvelous,
+                                        perfects: perfects,
+                                        greats: greats,
+                                        goods: goods,
+                                        missedSteps: missedSteps,
+                                        oks: oks,
+                                        missedHolds: missedHolds,
+                                        totalMisses: missedSteps + missedHolds,
+                                        actualScore: actualScore,
+                                        displayedScore: roundedScore
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        return {
+            SC: SC,
+            pointValues: { marvelousPoints, perfectPoints, greatPoints, goodPoints },
+            solutions: solutions
+        };
+    }
+
+    document.getElementById('calculatorForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const score = parseInt(document.getElementById('score').value);
+        const steps = parseInt(document.getElementById('steps').value);
+        const holds = parseInt(document.getElementById('holds').value);
+        const maxPerfects = parseInt(document.getElementById('maxPerfects').value) || 125;
+        
+        const resultsDiv = document.getElementById('results');
+        resultsDiv.innerHTML = '<p style="text-align: center; color: #666;">Calculating...</p>';
+        
+        setTimeout(() => {
+            try {
+                const result = findDDRBreakdowns(steps, holds, score, maxPerfects);
+                
+                let html = `
+                    <div class="info-box">
+                        <strong>Step Score (SC):</strong> ${result.SC}<br>
+                        <strong>Total Notes:</strong> ${steps + holds} (${steps} steps + ${holds} holds)<br>
+                        <strong>Point Values:</strong> Marvelous/OK: ${result.pointValues.marvelousPoints} | Perfect: ${result.pointValues.perfectPoints} | Great: ${result.pointValues.greatPoints} | Good: ${result.pointValues.goodPoints}
+                    </div>
+                `;
+                
+                if (result.solutions.length === 0) {
+                    html += '<div class="no-results">No valid combinations found for this score. Please check your inputs.</div>';
+                } else {
+                    html += `<h2 style="margin-bottom: 20px; color: #333;">Found ${result.solutions.length} Possible Breakdown${result.solutions.length > 1 ? 's' : ''}:</h2>`;
+                    
+                    result.solutions.forEach((sol, idx) => {
+                        html += `
+                            <div class="solution">
+                                <h3>Solution ${idx + 1}</h3>
+                                <div class="solution-grid">
+                                    <div class="stat">
+                                        <div class="stat-label">Marvelous</div>
+                                        <div class="stat-value marvelous">${sol.marvelous}</div>
+                                    </div>
+                                    <div class="stat">
+                                        <div class="stat-label">Perfect</div>
+                                        <div class="stat-value perfect">${sol.perfects}</div>
+                                    </div>
+                                    <div class="stat">
+                                        <div class="stat-label">Great</div>
+                                        <div class="stat-value great">${sol.greats}</div>
+                                    </div>
+                                    <div class="stat">
+                                        <div class="stat-label">Good</div>
+                                        <div class="stat-value good">${sol.goods}</div>
+                                    </div>
+                                    <div class="stat">
+                                        <div class="stat-label">O.K.</div>
+                                        <div class="stat-value ok">${sol.oks}/${holds}</div>
+                                    </div>
+                                    <div class="stat">
+                                        <div class="stat-label">Miss</div>
+                                        <div class="stat-value miss">${sol.totalMisses}</div>
+                                    </div>
+                                </div>
+                                <p style="margin-top: 15px; text-align: center; color: #666; font-size: 14px;">
+                                    Actual Score: ${sol.actualScore.toLocaleString()} → Displayed: ${sol.displayedScore.toLocaleString()}
+                                </p>
+                            </div>
+                        `;
+                    });
+                }
+                
+                resultsDiv.innerHTML = html;
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }, 100);
+    });
+</script>
+```
+
+</body>
+</html>
